@@ -1,0 +1,31 @@
+{
+  "calva.replConnectSequences": [
+    {
+      "name": "jank",
+      "projectType": "Leiningen",
+      "autoSelectForJackIn": true,
+      "replSessionNames": {
+        "primary": "jank"
+      },
+      "projectRootPath": [
+        "."
+      ],
+      "menuSelections": {
+        "leinProfiles": [
+          "base"
+        ]
+      },
+      "nReplPortFile": [
+        ".nrepl-port"
+      ],
+      "jackInEnv": {
+        "CFLAGS": "-gz=none",
+        "PATH": "/home/chris/repos/jank/compiler+runtime/build:${env:PATH}"
+      }
+    }
+  ],
+  "terminal.integrated.env.linux": {
+    "CFLAGS": "-gz=none",
+    "PATH": "${workspaceFolder}/../jank/compiler+runtime/build:${env:PATH}"
+  }
+}
