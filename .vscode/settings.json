@@ -10,22 +10,24 @@
       "projectRootPath": [
         "."
       ],
+      "extraNReplMiddleware": [
+        "portal.nrepl/middleware"
+      ],
       "menuSelections": {
         "leinProfiles": [
-          "base"
+          "base",
+          "dev"
         ]
       },
       "nReplPortFile": [
         ".nrepl-port"
       ],
       "jackInEnv": {
-        "CFLAGS": "-gz=none",
         "PATH": "/home/chris/repos/jank/compiler+runtime/build:${env:PATH}"
       }
     }
   ],
   "terminal.integrated.env.linux": {
-    "CFLAGS": "-gz=none",
     "PATH": "${workspaceFolder}/../jank/compiler+runtime/build:${env:PATH}"
   }
 }

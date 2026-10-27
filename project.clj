@@ -11,4 +11,6 @@
                            :eager? true}}
              :release {:jank {:target-dir "target/release"
                               :optimization-level 3
-                              :debug? false}}})
+                              :debug? false}}
+             :dev {:source-paths ["dev"]
+                   :dependencies [[djblue/portal "0.68.1"]]}})

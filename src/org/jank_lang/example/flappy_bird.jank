@@ -188,13 +188,14 @@
   (cpp/InitWindow screen-width screen-height "janky bird")
   (cpp/SetTargetFPS 60)
 
-  (def global-state (start-game default-state))
-  (while (cpp/! (cpp/WindowShouldClose))
-    (let [state (step-frame global-state)
-          _ (cpp/BeginDrawing)
-          state (draw-frame! state)
-          _ (cpp/EndDrawing)]
-      (def global-state state)))
+  (let [global-state (atom (start-game default-state))]
+    (tap> global-state)
+    (while (cpp/! (cpp/WindowShouldClose))
+      (let [state (step-frame @global-state)
+            _ (cpp/BeginDrawing)
+            state (draw-frame! state)
+            _ (cpp/EndDrawing)]
+        (reset! global-state state))))
 
   (cpp/CloseWindow))
 
