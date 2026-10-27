@@ -29,5 +29,6 @@
   ],
   "terminal.integrated.env.linux": {
     "PATH": "${workspaceFolder}/../jank/compiler+runtime/build:${env:PATH}"
-  }
+  },
+  "debug.allowBreakpointsEverywhere": true
 }
