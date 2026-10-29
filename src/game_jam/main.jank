@@ -1,0 +1,29 @@
+(ns game-jam.main
+  (:include "raylib.h" "raygui.h" "rlgl.h"))
+
+(defonce state-atom (atom nil))
+
+(defn update-world [state] state)
+
+(defn draw-frame! [state]
+  nil)
+
+(defn -main [& args]
+  (cpp/InitWindow 1920 1080 "froggy")
+  (cpp/SetTargetFPS 60)
+  (cpp/SetExitKey cpp/KEY_NULL)
+  (while (cpp/! (cpp/WindowShouldClose))
+    (let [next-state (swap! state-atom update-world)]
+      (cpp/BeginDrawing)
+      (try
+        (draw-frame! next-state)
+        (catch :default _)))
+    (cpp/EndDrawing))
+  (cpp/CloseWindow))
+
+(comment
+  (def fut (future (-main)))
+  (require '[portal.api :as p])
+  (p/open {:launcher :auto})
+  (add-tap #'p/submit)
+  (tap> ::hi))

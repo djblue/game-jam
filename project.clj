@@ -1,11 +1,9 @@
-(defproject org.jank-lang.example/flappy-bird "0.1-SNAPSHOT"
-  :license {:name "MPL 2.0"
-            :url "https://www.mozilla.org/en-US/MPL/2.0/"}
+(defproject game-jam "0.1-SNAPSHOT"
   :dependencies [[org.jank-lang.commons/raylib-sys "2026.09-3"]
                  [org.jank-lang.commons/raygui-sys "2026.09-5"]]
   :plugins [[org.jank-lang/lein-jank "2026.10-2"]]
   :middleware [leiningen.jank/middleware]
-  :main org.jank-lang.example.flappy-bird
+  :main game-jam.main
   :profiles {:base {:jank {:target-dir "target/debug"
                            :optimization-level 0
                            :eager? true}}
