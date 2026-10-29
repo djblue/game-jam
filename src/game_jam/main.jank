@@ -1,15 +1,192 @@
 (ns game-jam.main
-  (:include "raylib.h" "raygui.h" "rlgl.h"))
+  (:include "raylib.h"
+            "raygui.h"
+            "rlgl.h"
+            "raymath.h"
+            "./src/game_jam/convert.hpp"))
 
-(defonce state-atom (atom nil))
+(comment
+  (cpp/Vector2Zero)
+  (cpp/Vector2Length {:x 1 :y 1}))
 
-(defn update-world [state] state)
+(def screen-width 1920)
+(def screen-height 1080)
+
+(def initial-state
+  {:frog-mouth {:position
+                {:x (* 0.5 screen-width)
+                 :y (* 0.5 screen-height)}
+                :radius 75
+                :velocity {:x 0 :y 0}}
+   :frog-eating #{}
+   :fly-ids 0
+   :flys {}
+   :timer 0})
+
+(defonce state-atom (atom initial-state))
+
+(comment
+  (reset! state-atom initial-state)
+  (-> @state-atom)
+  comment)
+
+(defn spawn-fly [{:keys [timer fly-ids] :as state}]
+  (-> state
+      (update :fly-ids inc)
+      (update :flys assoc (inc fly-ids)
+              {:position
+               {:x (int (+ (* 0.8 (rand) screen-width)
+                           (* 0.1 screen-width)))
+                :y (int (+ (* 0.8 (rand) screen-height)
+                           (* 0.1 screen-height)))}
+               :velocity
+               {:x 0 :y 0}
+               :radius 25
+               :spawn-time timer})))
+
+(defn handle-input [state]
+  (if (cpp/IsKeyPressed cpp/KEY_R)
+    initial-state
+    (cond-> state
+      (cpp/IsKeyPressed cpp/KEY_ESCAPE)
+      (update :paused? not)
+
+      (or (cpp/IsKeyPressed cpp/KEY_UP)
+          (cpp/IsKeyPressed cpp/KEY_W))
+      (update-in [:frog-mouth :velocity :y] dec)
+      (or (cpp/IsKeyPressedRepeat cpp/KEY_UP)
+          (cpp/IsKeyPressedRepeat cpp/KEY_W))
+      (update-in [:frog-mouth :velocity :y] - 0.5)
+
+      (or (cpp/IsKeyPressed cpp/KEY_DOWN)
+          (cpp/IsKeyPressed cpp/KEY_S))
+      (update-in [:frog-mouth :velocity :y] inc)
+      (or (cpp/IsKeyPressedRepeat cpp/KEY_DOWN)
+          (cpp/IsKeyPressedRepeat cpp/KEY_S))
+      (update-in [:frog-mouth :velocity :y] + 0.5)
+
+      (or (cpp/IsKeyPressed cpp/KEY_LEFT)
+          (cpp/IsKeyPressed cpp/KEY_A))
+      (update-in [:frog-mouth :velocity :x] dec)
+      (or (cpp/IsKeyPressedRepeat cpp/KEY_LEFT)
+          (cpp/IsKeyPressedRepeat cpp/KEY_A))
+      (update-in [:frog-mouth :velocity :x] - 0.5)
+
+      (or (cpp/IsKeyPressed cpp/KEY_RIGHT)
+          (cpp/IsKeyPressed cpp/KEY_D))
+      (update-in [:frog-mouth :velocity :x] inc)
+      (or (cpp/IsKeyPressedRepeat cpp/KEY_RIGHT)
+          (cpp/IsKeyPressedRepeat cpp/KEY_D))
+      (update-in [:frog-mouth :velocity :x] + 0.5)
+
+      (cpp/IsKeyPressed cpp/KEY_SPACE)
+      (spawn-fly))))
+
+(defn wall-x [x]
+  (or (< x 0) (> x screen-width)))
+
+(defn wall-y [y]
+  (or (< y 0) (> y screen-height)))
+
+(defn intersection [{pa :position ra :radius} {pb :position rb :radius}]
+  (cpp/CheckCollisionCircles pa (float ra) pb (float rb)))
+
+(defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
+  (reduce-kv
+   (fn [state fly-id fly]
+     (cond-> state
+       (and (not (contains? frog-eating fly-id))
+            (intersection fly frog-mouth))
+       (-> (update :frog-eating conj fly-id)
+           (assoc-in [:flys fly-id :eat-timer] timer))))
+   state
+   flys))
+
+(defn clamp-eating [{:keys [frog-eating flys frog-mouth timer] :as state}]
+  (reduce
+   (fn [state fly-id]
+     (let [fly (get flys fly-id)]
+       (cond
+         (< (+ 1 (:eat-timer fly)) timer)
+         (-> state
+             (update :frog-eating disj fly-id)
+             (update :flys dissoc fly-id))
+
+         (> (cpp/Vector2Distance (:position fly) (:position frog-mouth))
+            (* 2.5 (+ (:radius fly) (:radius frog-mouth))))
+         (update-in state
+                    [:frog-mouth :velocity]
+                    (fn [v-mouth]
+                      (let [p-mouth (:position frog-mouth)
+                            p-fly (:position fly)]
+                        (cpp/Vector2Scale
+                         (cpp/Vector2Normalize (cpp/Vector2Subtract p-fly p-mouth))
+                         (max 1 (* 0.75 (cpp/Vector2Length v-mouth)))))))
+
+         :else state)))
+   state
+   frog-eating))
+
+(defn update-mouth [{:keys [frog-mouth dt] :as state}]
+  (let [{pos :position vel :velocity} frog-mouth
+        {px :x py :y :as pos} (cpp/Vector2Add pos (cpp/Vector2Scale vel (* 0.05 screen-width dt)))
+        {vx :x vy :y} vel
+        vx (if (wall-x px) (- vx) vx)
+        vy (if (wall-y py) (- vy) vy)]
+    (update state
+            :frog-mouth
+            (fn [frog-mouth]
+              (assoc frog-mouth :position pos :velocity {:x vx :y vy})))))
+
+(defn apply-physics [state]
+  (-> state
+      (clamp-eating)
+      (update-mouth)
+      (check-flys)))
+
+(defn update-time [state]
+  (let [dt (cpp/GetFrameTime)]
+    (-> state
+        (update :timer + dt)
+        (assoc :dt dt))))
+
+(defn update-world [state]
+  (cond-> state
+    :always handle-input
+    (not (:paused? state)) (-> update-time apply-physics)))
+
+(defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
+  (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
+
+(defn draw-tongue! [{:keys [frog-eating] {p-mouth :position} :frog-mouth :as state}]
+  (doseq [frog-id frog-eating
+          :let [{p-fly :position} (get-in state [:flys frog-id])]]
+    (cpp/DrawLineEx p-mouth p-fly 5 (cpp/GetColor 0x0000ffff))))
+
+(defn draw-flys! [{:keys [flys]}]
+  (doseq [[_id {p :position r :radius}] flys]
+    (cpp/DrawCircleV p (float r) (cpp/GetColor 0x00ff00ff))))
+
+(defn draw-status! [state]
+  (cpp/DrawText
+   (if (:paused? state)
+     "PAUSED"
+     "PLAYING")
+   10
+   10
+   40
+   (cpp/GetColor 0xffffffff)))
 
 (defn draw-frame! [state]
+  (cpp/ClearBackground cpp/BLACK)
+  (draw-mouth! state)
+  (draw-tongue! state)
+  (draw-flys! state)
+  (draw-status! state)
   nil)
 
 (defn -main [& args]
-  (cpp/InitWindow 1920 1080 "froggy")
+  (cpp/InitWindow screen-width screen-height "froggy")
   (cpp/SetTargetFPS 60)
   (cpp/SetExitKey cpp/KEY_NULL)
   (while (cpp/! (cpp/WindowShouldClose))
