@@ -1,3 +1,4 @@
+.DS_Store
 .calva
 .clj-kondo/
 .jank-repl-history
