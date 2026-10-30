@@ -6,6 +6,26 @@
             "raymath.h"
             "./src/game_jam/convert.hpp"))
 
+(defonce assets (atom {}))
+
+(defn load-asset! [{:keys [id path replace]}]
+  (let [image (cpp/LoadImage path)]
+    (doseq [[from to] replace]
+      (cpp/ImageColorReplace (cpp/& image) (cpp/GetColor from) (cpp/GetColor to)))
+    (swap! assets assoc id (cpp/LoadTextureFromImage image))
+    (cpp/UnloadImage image)))
+
+(defn load-assets! []
+  (load-asset! {:id :background_fill
+                :path "./resources/background/background_fill.png"
+                :replace {0xff0000ff 0x679153ff
+                          0x00ff00ff 0x95daf4ff}})
+  (load-asset! {:id :background_lines
+                :path "./resources/background/background_lines.png"
+                :replace {0xff0000ff 0x3e5c30ff
+                          0x00ff00ff 0xab5d46ff
+                          0x0000ffff 0x278282ff}}))
+
 ;; TODO:
 ;; - render frog health
 ;; - automatic fly spawning
@@ -246,6 +266,10 @@
       (and (not done?) (not (:paused? state)))
       (-> update-time apply-physics))))
 
+(defn draw-background! [_state]
+  (cpp/DrawTexture (:background_fill @assets) 0 0 cpp/WHITE)
+  (cpp/DrawTexture (:background_lines @assets) 0 0 cpp/WHITE))
+
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
 
@@ -308,6 +332,7 @@
 
 (defn draw-frame! [state]
   (cpp/ClearBackground cpp/BLACK)
+  (draw-background! state)
   (draw-mouth! state)
   (draw-tongue! state)
   (draw-flys! state)
@@ -316,6 +341,7 @@
 
 (defn -main [& args]
   (cpp/InitWindow screen-width screen-height "froggy")
+  (load-assets!)
   (cpp/SetTargetFPS 60)
   (cpp/SetExitKey cpp/KEY_NULL)
   (while (cpp/! (cpp/WindowShouldClose))
