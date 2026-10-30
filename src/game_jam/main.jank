@@ -231,7 +231,8 @@
 
 (defn draw-flys! [{:keys [flys timer]}]
   (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
-          :let [time-alive (subs (str (- timer spawn-time)) 0 4)
+          :let [time-alive (str (- timer spawn-time))
+                time-alive (subs time-alive 0 (min (count time-alive) 4))
                 text-size 20]]
     (cpp/DrawCircleV p (float r) (cpp/GetColor 0x00ff00ff))
     (cpp/DrawText
