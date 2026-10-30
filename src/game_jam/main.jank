@@ -54,12 +54,14 @@
       (update :fly-ids inc)
       (update :flys assoc (inc fly-ids)
               {:position
-               {:x (int (+ (* 0.8 (rand) screen-width)
-                           (* 0.1 screen-width)))
-                :y (int (+ (* 0.8 (rand) screen-height)
-                           (* 0.1 screen-height)))}
+               {:x 10 #_(int (+ (* 0.8 (rand) screen-width)
+                                (* 0.1 screen-width)))
+                :y (int (+ (* 0.6 (rand) screen-height)
+                           (* 0.2 screen-height)))}
                :velocity
-               {:x 0 :y 0}
+               {:x 0 #_(- (* (rand) 0.4 screen-width)
+                          (* 0.2 screen-width))
+                :y 0}
                :radius 25
                :spawn-time timer})))
 
@@ -119,12 +121,6 @@
               (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_RIGHT_TRIGGER_1))
           (spawn-fly))))))
 
-(defn wall-x [x]
-  (or (< x 0) (> x screen-width)))
-
-(defn wall-y [y]
-  (or (< y 0) (> y screen-height)))
-
 (defn intersection [{pa :position ra :radius} {pb :position rb :radius}]
   (cpp/CheckCollisionCircles pa (float ra) pb (float rb)))
 
@@ -157,6 +153,35 @@
      state
      flys)))
 
+(defn neg [n] (- (abs n)))
+
+(defn wall-bang [{p :position :as e}]
+  (let [{px :x py :y} p]
+    (cond-> e
+      (<= px 0) (update-in [:velocity :x] abs)
+      (> px screen-width) (update-in [:velocity :x] neg)
+      (<= py 0) (update-in [:velocity :y] abs)
+      (> py screen-height) (update-in [:velocity :y] neg))))
+
+(defn route-flys [{:keys [flys frog-eating dt] :as state}]
+  (let [speed (* 0.15 screen-width)]
+    (reduce-kv
+     (fn [state fly-id {p :position v :velocity}]
+       (if (contains? frog-eating fly-id)
+         state
+         (let [p (cpp/Vector2Add p (cpp/Vector2Scale v dt))
+               v (cpp/Vector2Scale
+                  (cpp/Vector2Normalize
+                   (cpp/Vector2
+                    (float (if (neg? (:x v)) -1 1))
+                    (cpp/sin (* 3 2 cpp/PI (/ (:x p) screen-width)))))
+                  speed)]
+           (-> state
+               (update-in [:flys fly-id] assoc :position p :velocity v)
+               (update-in [:flys fly-id] wall-bang)))))
+     state
+     flys)))
+
 (defn clamp-eating [{:keys [frog-eating flys frog-mouth timer] :as state}]
   (reduce
    (fn [state fly-id]
@@ -184,21 +209,20 @@
    frog-eating))
 
 (defn update-mouth [{:keys [dt frog-mouth] :as state}]
-  (let [{pos :position vel :velocity} frog-mouth
-        {px :x py :y :as pos} (cpp/Vector2Add pos (cpp/Vector2Scale vel dt))
-        {vx :x vy :y} (cpp/Vector2Subtract
-                       vel
-                       (cpp/Vector2Scale (cpp/Vector2Normalize vel)
-                                         (* 0.25 (cpp/Vector2Length vel) dt)))
-        vx (if (wall-x px) (- vx) vx)
-        vy (if (wall-y py) (- vy) vy)]
-    (update state
-            :frog-mouth
-            (fn [frog-mouth]
-              (assoc frog-mouth :position pos :velocity {:x vx :y vy})))))
+  (let [{p :position v :velocity} frog-mouth]
+    (assoc state
+           :frog-mouth
+           (wall-bang
+            (assoc frog-mouth
+                   :position (cpp/Vector2Add p (cpp/Vector2Scale v dt))
+                   :velocity (cpp/Vector2Subtract
+                              v
+                              (cpp/Vector2Scale (cpp/Vector2Normalize v)
+                                                (* 0.25 (cpp/Vector2Length v) dt))))))))
 
 (defn apply-physics [state]
   (-> state
+      (route-flys)
       (clamp-eating)
       (update-mouth)
       (check-flys)))
@@ -238,8 +262,8 @@
     (cpp/DrawCircleV p (float r) (cpp/GetColor 0x00ff00ff))
     (cpp/DrawText
      time-alive
-     (- (:x p) r)
-     (- (:y p) r text-size)
+     (int (- (:x p) r))
+     (int (- (:y p) r text-size))
      text-size
      (cpp/GetColor 0xffffffff))))
 
