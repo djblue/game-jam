@@ -70,7 +70,8 @@
       (or (when (and (cpp/IsGamepadAvailable i)
                      (let [name (cpp/GetGamepadName i)]
                        (or (str/includes? name "Xbox")
-                           (str/includes? name "X-Box"))))
+                           (str/includes? name "X-Box")
+                           (str/includes? name "DualSense"))))
             i)
           (recur (inc i))))))
 
