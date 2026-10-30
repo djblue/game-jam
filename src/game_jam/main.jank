@@ -25,7 +25,7 @@
 
 (def screen-width 1920)
 (def screen-height 1080)
-(def deadzone 0.01)
+(def deadzone 0.05)
 
 (def initial-state
   {:frog-mouth {:position
@@ -33,7 +33,9 @@
                  :y (* 0.5 screen-height)}
                 :radius 75
                 :velocity {:x 0 :y 0}}
+   :frog-tongues 1
    :frog-eating #{}
+   :frog-health 100
    :fly-ids 0
    :flys {}
    :timer 0
@@ -117,16 +119,23 @@
 (defn intersection [{pa :position ra :radius} {pb :position rb :radius}]
   (cpp/CheckCollisionCircles pa (float ra) pb (float rb)))
 
+(defn frog-max-tongues? [{:keys [frog-tongues frog-eating]}]
+  (== frog-tongues (count frog-eating)))
+
 (defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
-  (reduce-kv
-   (fn [state fly-id fly]
-     (cond-> state
-       (and (not (contains? frog-eating fly-id))
-            (intersection fly frog-mouth))
-       (-> (update :frog-eating conj fly-id)
-           (assoc-in [:flys fly-id :eat-timer] timer))))
-   state
-   flys))
+  (if (frog-max-tongues? state)
+    state
+    (reduce-kv
+     (fn [state fly-id fly]
+       (let [state (cond-> state
+                     (and (not (contains? frog-eating fly-id))
+                          (intersection fly frog-mouth))
+                     (-> (update :frog-eating conj fly-id)
+                         (assoc-in [:flys fly-id :eat-timer] timer)))]
+         (cond-> state
+           (frog-max-tongues? state) reduced)))
+     state
+     flys)))
 
 (defn clamp-eating [{:keys [frog-eating flys frog-mouth timer] :as state}]
   (reduce
@@ -204,15 +213,24 @@
      text-size
      (cpp/GetColor 0xffffffff))))
 
-(defn draw-status! [state]
-  (cpp/DrawText
-   (if (:paused? state)
-     "PAUSED"
-     "PLAYING")
-   10
-   10
-   40
-   (cpp/GetColor 0xffffffff)))
+(defn draw-status! [{:keys [paused? frog-health]}]
+  (let [font-size 40
+        frog-health (str frog-health)]
+    (cpp/DrawText
+     (if paused?
+       "PAUSED"
+       "PLAYING")
+     10
+     10
+     font-size
+     (cpp/GetColor 0xffffffff))
+    (cpp/DrawText
+     frog-health
+     (int (- (* 0.5 screen-width)
+             (* 0.5 (cpp/MeasureText frog-health 40))))
+     10
+     font-size
+     (cpp/GetColor 0xffffffff))))
 
 (defn draw-frame! [state]
   (cpp/ClearBackground cpp/BLACK)
