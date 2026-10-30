@@ -269,7 +269,16 @@
          (int (- (* 0.5 screen-height)
                  (* 0.5 font-size)))
          font-size
-         (cpp/GetColor 0xffffffff))))))
+         (cpp/GetColor 0xffffffff))))
+    (let [fps (str (cpp/GetFPS) " FPS")]
+      (cpp/DrawText
+       fps
+       (int (- screen-width
+               10
+               (cpp/MeasureText fps font-size)))
+       10
+       font-size
+       (cpp/GetColor 0xffffffff)))))
 
 (defn draw-frame! [state]
   (cpp/ClearBackground cpp/BLACK)
