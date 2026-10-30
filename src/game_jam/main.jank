@@ -26,6 +26,10 @@
                           0x00ff00ff 0xab5d46ff
                           0x0000ffff 0x278282ff}}))
 
+(defn load-gamepad-mappings! []
+  (doseq [mapping (str/split-lines (slurp "./resources/gamepad-mappings.txt"))]
+    (cpp/SetGamepadMappings mapping)))
+
 ;; TODO:
 ;; - render frog health
 ;; - automatic fly spawning
@@ -344,6 +348,7 @@
   (load-assets!)
   (cpp/SetTargetFPS 60)
   (cpp/SetExitKey cpp/KEY_NULL)
+  (load-gamepad-mappings!)
   (while (cpp/! (cpp/WindowShouldClose))
     (let [next-state (swap! state-atom update-world)]
       (cpp/BeginDrawing)
