@@ -4,6 +4,7 @@
   :plugins [[org.jank-lang/lein-jank "2026.10-2"]]
   :middleware [leiningen.jank/middleware]
   :main game-jam.main
+  :jank {:include-dirs ["src"]}
   :profiles {:base {:jank {:target-dir "target/debug"
                            :optimization-level 0
                            :eager? true}}

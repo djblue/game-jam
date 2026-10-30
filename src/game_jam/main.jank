@@ -4,7 +4,7 @@
             "raygui.h"
             "rlgl.h"
             "raymath.h"
-            "./src/game_jam/convert.hpp"))
+            "game_jam/convert.hpp"))
 
 (defonce assets (atom {}))
 
