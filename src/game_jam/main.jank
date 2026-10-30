@@ -71,45 +71,48 @@
         (recur (inc i)))))
 
 (defn handle-input [{:keys [dt] :as state}]
-  (if (cpp/IsKeyPressed cpp/KEY_R)
-    initial-state
-    (let [speed (* 0.5 dt screen-width)
-          gamepad (int (get-gamepad))
-          axis-x (cpp/GetGamepadAxisMovement gamepad 0)
-          axis-y (cpp/GetGamepadAxisMovement gamepad 1)]
-      (cond-> state
-        (or (cpp/IsKeyPressed cpp/KEY_ESCAPE)
-            (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_MIDDLE_RIGHT))
-        (update :paused? not)
+  (let [gamepad (int (get-gamepad))]
+    (if (or (cpp/IsKeyPressed cpp/KEY_R)
+            (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_MIDDLE_LEFT))
+      initial-state
+      (let [speed (* 0.5 dt screen-width)
+            axis-x (cpp/GetGamepadAxisMovement gamepad 0)
+            axis-y (cpp/GetGamepadAxisMovement gamepad 1)]
+        (cond-> state
+          (or (cpp/IsKeyPressed cpp/KEY_ESCAPE)
+              (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_MIDDLE_RIGHT))
+          (update :paused? not)
 
-        (or (cpp/IsKeyDown cpp/KEY_UP)
-            (cpp/IsKeyDown cpp/KEY_W)
-            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_UP))
-        (update-in [:frog-mouth :velocity :y] - speed)
+          (or (cpp/IsKeyDown cpp/KEY_UP)
+              (cpp/IsKeyDown cpp/KEY_W)
+              (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_UP))
+          (update-in [:frog-mouth :velocity :y] - speed)
 
-        (or (cpp/IsKeyDown cpp/KEY_DOWN)
-            (cpp/IsKeyDown cpp/KEY_S)
-            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_DOWN))
-        (update-in [:frog-mouth :velocity :y] + speed)
+          (or (cpp/IsKeyDown cpp/KEY_DOWN)
+              (cpp/IsKeyDown cpp/KEY_S)
+              (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_DOWN))
+          (update-in [:frog-mouth :velocity :y] + speed)
 
-        (or (cpp/IsKeyDown cpp/KEY_LEFT)
-            (cpp/IsKeyDown cpp/KEY_A)
-            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_LEFT))
-        (update-in [:frog-mouth :velocity :x] - speed)
+          (or (cpp/IsKeyDown cpp/KEY_LEFT)
+              (cpp/IsKeyDown cpp/KEY_A)
+              (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_LEFT))
+          (update-in [:frog-mouth :velocity :x] - speed)
 
-        (or (cpp/IsKeyDown cpp/KEY_RIGHT)
-            (cpp/IsKeyDown cpp/KEY_D)
-            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_RIGHT))
-        (update-in [:frog-mouth :velocity :x] + speed)
+          (or (cpp/IsKeyDown cpp/KEY_RIGHT)
+              (cpp/IsKeyDown cpp/KEY_D)
+              (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_RIGHT))
+          (update-in [:frog-mouth :velocity :x] + speed)
 
-        (> (abs axis-x) deadzone)
-        (update-in [:frog-mouth :velocity :x] + (* axis-x speed))
+          (> (abs axis-x) deadzone)
+          (update-in [:frog-mouth :velocity :x] + (* axis-x speed))
 
-        (> (abs axis-y) deadzone)
-        (update-in [:frog-mouth :velocity :y] + (* axis-y speed))
+          (> (abs axis-y) deadzone)
+          (update-in [:frog-mouth :velocity :y] + (* axis-y speed))
 
-        (cpp/IsKeyPressed cpp/KEY_SPACE)
-        (spawn-fly)))))
+          ;; TODO: Remove dev spawn
+          (or (cpp/IsKeyPressed cpp/KEY_SPACE)
+              (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_RIGHT_TRIGGER_1))
+          (spawn-fly))))))
 
 (defn wall-x [x]
   (or (< x 0) (> x screen-width)))
