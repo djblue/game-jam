@@ -122,6 +122,17 @@
 (defn frog-max-tongues? [{:keys [frog-tongues frog-eating]}]
   (== frog-tongues (count frog-eating)))
 
+(defn apply-damage [{:keys [flys frog-eating timer] :as state}]
+  (reduce-kv
+   (fn [state fly-id {:keys [spawn-time]}]
+     (cond-> state
+       (and (not (contains? frog-eating fly-id))
+            (< (+ spawn-time 10) timer))
+       (-> (update :flys dissoc fly-id)
+           (update :frog-health - 10))))
+   state
+   flys))
+
 (defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
   (if (frog-max-tongues? state)
     state
@@ -191,6 +202,7 @@
 (defn update-world [state]
   (cond-> state
     :always handle-input
+    :always apply-damage
     (not (:paused? state)) (-> update-time apply-physics)))
 
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
