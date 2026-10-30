@@ -1,9 +1,23 @@
 (ns game-jam.main
+  (:require [clojure.string :as str])
   (:include "raylib.h"
             "raygui.h"
             "rlgl.h"
             "raymath.h"
             "./src/game_jam/convert.hpp"))
+
+;; TODO:
+;; - render frog health
+;; - automatic fly spawning
+;; - flys should fly after spawn
+;;  - should be able to pull tongue?
+;; - flys explode after death timer
+;;   - lower frog health
+
+;; IDEAS:
+;; - bugs that dies will take a part of the health away
+;; - bugs you eat will heal you
+;; - you goal is to eat more bugs that die to keep yourself alive?
 
 (comment
   (cpp/Vector2Zero)
@@ -11,6 +25,7 @@
 
 (def screen-width 1920)
 (def screen-height 1080)
+(def deadzone 0.01)
 
 (def initial-state
   {:frog-mouth {:position
@@ -21,7 +36,8 @@
    :frog-eating #{}
    :fly-ids 0
    :flys {}
-   :timer 0})
+   :timer 0
+   :dt 0})
 
 (defonce state-atom (atom initial-state))
 
@@ -44,43 +60,53 @@
                :radius 25
                :spawn-time timer})))
 
-(defn handle-input [state]
+(defn get-gamepad []
+  (loop [i 0]
+    (or (when (and (cpp/IsGamepadAvailable i)
+                   (str/includes? (cpp/GetGamepadName i) "Xbox"))
+          i)
+        (recur (inc i)))))
+
+(defn handle-input [{:keys [dt] :as state}]
   (if (cpp/IsKeyPressed cpp/KEY_R)
     initial-state
-    (cond-> state
-      (cpp/IsKeyPressed cpp/KEY_ESCAPE)
-      (update :paused? not)
+    (let [speed (* 0.5 dt screen-width)
+          gamepad (int (get-gamepad))
+          axis-x (cpp/GetGamepadAxisMovement gamepad 0)
+          axis-y (cpp/GetGamepadAxisMovement gamepad 1)]
+      (cond-> state
+        (or (cpp/IsKeyPressed cpp/KEY_ESCAPE)
+            (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_MIDDLE_RIGHT))
+        (update :paused? not)
 
-      (or (cpp/IsKeyPressed cpp/KEY_UP)
-          (cpp/IsKeyPressed cpp/KEY_W))
-      (update-in [:frog-mouth :velocity :y] dec)
-      (or (cpp/IsKeyPressedRepeat cpp/KEY_UP)
-          (cpp/IsKeyPressedRepeat cpp/KEY_W))
-      (update-in [:frog-mouth :velocity :y] - 0.5)
+        (or (cpp/IsKeyDown cpp/KEY_UP)
+            (cpp/IsKeyDown cpp/KEY_W)
+            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_UP))
+        (update-in [:frog-mouth :velocity :y] - speed)
 
-      (or (cpp/IsKeyPressed cpp/KEY_DOWN)
-          (cpp/IsKeyPressed cpp/KEY_S))
-      (update-in [:frog-mouth :velocity :y] inc)
-      (or (cpp/IsKeyPressedRepeat cpp/KEY_DOWN)
-          (cpp/IsKeyPressedRepeat cpp/KEY_S))
-      (update-in [:frog-mouth :velocity :y] + 0.5)
+        (or (cpp/IsKeyDown cpp/KEY_DOWN)
+            (cpp/IsKeyDown cpp/KEY_S)
+            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_DOWN))
+        (update-in [:frog-mouth :velocity :y] + speed)
 
-      (or (cpp/IsKeyPressed cpp/KEY_LEFT)
-          (cpp/IsKeyPressed cpp/KEY_A))
-      (update-in [:frog-mouth :velocity :x] dec)
-      (or (cpp/IsKeyPressedRepeat cpp/KEY_LEFT)
-          (cpp/IsKeyPressedRepeat cpp/KEY_A))
-      (update-in [:frog-mouth :velocity :x] - 0.5)
+        (or (cpp/IsKeyDown cpp/KEY_LEFT)
+            (cpp/IsKeyDown cpp/KEY_A)
+            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_LEFT))
+        (update-in [:frog-mouth :velocity :x] - speed)
 
-      (or (cpp/IsKeyPressed cpp/KEY_RIGHT)
-          (cpp/IsKeyPressed cpp/KEY_D))
-      (update-in [:frog-mouth :velocity :x] inc)
-      (or (cpp/IsKeyPressedRepeat cpp/KEY_RIGHT)
-          (cpp/IsKeyPressedRepeat cpp/KEY_D))
-      (update-in [:frog-mouth :velocity :x] + 0.5)
+        (or (cpp/IsKeyDown cpp/KEY_RIGHT)
+            (cpp/IsKeyDown cpp/KEY_D)
+            (cpp/IsGamepadButtonDown gamepad cpp/GAMEPAD_BUTTON_LEFT_FACE_RIGHT))
+        (update-in [:frog-mouth :velocity :x] + speed)
 
-      (cpp/IsKeyPressed cpp/KEY_SPACE)
-      (spawn-fly))))
+        (> (abs axis-x) deadzone)
+        (update-in [:frog-mouth :velocity :x] + (* axis-x speed))
+
+        (> (abs axis-y) deadzone)
+        (update-in [:frog-mouth :velocity :y] + (* axis-y speed))
+
+        (cpp/IsKeyPressed cpp/KEY_SPACE)
+        (spawn-fly)))))
 
 (defn wall-x [x]
   (or (< x 0) (> x screen-width)))
@@ -120,17 +146,20 @@
                       (let [p-mouth (:position frog-mouth)
                             p-fly (:position fly)]
                         (cpp/Vector2Scale
-                         (cpp/Vector2Normalize (cpp/Vector2Subtract p-fly p-mouth))
+                         (cpp/vector2normalize (cpp/Vector2Subtract p-fly p-mouth))
                          (max 1 (* 0.75 (cpp/Vector2Length v-mouth)))))))
 
          :else state)))
    state
    frog-eating))
 
-(defn update-mouth [{:keys [frog-mouth dt] :as state}]
+(defn update-mouth [{:keys [dt frog-mouth] :as state}]
   (let [{pos :position vel :velocity} frog-mouth
-        {px :x py :y :as pos} (cpp/Vector2Add pos (cpp/Vector2Scale vel (* 0.05 screen-width dt)))
-        {vx :x vy :y} vel
+        {px :x py :y :as pos} (cpp/Vector2Add pos (cpp/Vector2Scale vel dt))
+        {vx :x vy :y} (cpp/Vector2Subtract
+                       vel
+                       (cpp/Vector2Scale (cpp/Vector2Normalize vel)
+                                         (* 0.25 (cpp/Vector2Length vel) dt)))
         vx (if (wall-x px) (- vx) vx)
         vy (if (wall-y py) (- vy) vy)]
     (update state
