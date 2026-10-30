@@ -157,7 +157,8 @@
          (< (+ 1 (:eat-timer fly)) timer)
          (-> state
              (update :frog-eating disj fly-id)
-             (update :flys dissoc fly-id))
+             (update :flys dissoc fly-id)
+             (update :frog-health (fn [h] (min 100 (+ h 10)))))
 
          (> (cpp/Vector2Distance (:position fly) (:position frog-mouth))
             (* 2.5 (+ (:radius fly) (:radius frog-mouth))))
