@@ -192,9 +192,17 @@
           :let [{p-fly :position} (get-in state [:flys frog-id])]]
     (cpp/DrawLineEx p-mouth p-fly 5 (cpp/GetColor 0x0000ffff))))
 
-(defn draw-flys! [{:keys [flys]}]
-  (doseq [[_id {p :position r :radius}] flys]
-    (cpp/DrawCircleV p (float r) (cpp/GetColor 0x00ff00ff))))
+(defn draw-flys! [{:keys [flys timer]}]
+  (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
+          :let [time-alive (subs (str (- timer spawn-time)) 0 4)
+                text-size 20]]
+    (cpp/DrawCircleV p (float r) (cpp/GetColor 0x00ff00ff))
+    (cpp/DrawText
+     time-alive
+     (- (:x p) r)
+     (- (:y p) r text-size)
+     text-size
+     (cpp/GetColor 0xffffffff))))
 
 (defn draw-status! [state]
   (cpp/DrawText
