@@ -166,7 +166,7 @@
                       (let [p-mouth (:position frog-mouth)
                             p-fly (:position fly)]
                         (cpp/Vector2Scale
-                         (cpp/vector2normalize (cpp/Vector2Subtract p-fly p-mouth))
+                         (cpp/Vector2Normalize (cpp/Vector2Subtract p-fly p-mouth))
                          (max 1 (* 0.75 (cpp/Vector2Length v-mouth)))))))
 
          :else state)))
