@@ -68,7 +68,9 @@
     (if (> i 10)
       -1
       (or (when (and (cpp/IsGamepadAvailable i)
-                     (str/includes? (cpp/GetGamepadName i) "Xbox"))
+                     (let [name (cpp/GetGamepadName i)]
+                       (or (str/includes? name "Xbox")
+                           (str/includes? name "X-Box"))))
             i)
           (recur (inc i))))))
 
