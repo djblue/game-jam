@@ -45,6 +45,7 @@
 
 (comment
   (reset! state-atom initial-state)
+  (swap! state-atom assoc :frog-health 0)
   (-> @state-atom)
   comment)
 
@@ -199,11 +200,18 @@
         (update :timer + dt)
         (assoc :dt dt))))
 
+(defn game-over? [{:keys [frog-health]}] (<= frog-health 0))
+
 (defn update-world [state]
-  (cond-> state
-    :always handle-input
-    :always apply-damage
-    (not (:paused? state)) (-> update-time apply-physics)))
+  (let [done? (game-over? state)]
+    (cond-> state
+      :always handle-input
+
+      (not done?)
+      apply-damage
+
+      (and (not done?) (not (:paused? state)))
+      (-> update-time apply-physics))))
 
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
@@ -225,9 +233,9 @@
      text-size
      (cpp/GetColor 0xffffffff))))
 
-(defn draw-status! [{:keys [paused? frog-health]}]
+(defn draw-status! [{:keys [paused? frog-health] :as state}]
   (let [font-size 40
-        frog-health (str frog-health)]
+        frog-health-str (str (max frog-health 0))]
     (cpp/DrawText
      (if paused?
        "PAUSED"
@@ -237,12 +245,23 @@
      font-size
      (cpp/GetColor 0xffffffff))
     (cpp/DrawText
-     frog-health
+     frog-health-str
      (int (- (* 0.5 screen-width)
-             (* 0.5 (cpp/MeasureText frog-health 40))))
+             (* 0.5 (cpp/MeasureText frog-health-str font-size))))
      10
      font-size
-     (cpp/GetColor 0xffffffff))))
+     (cpp/GetColor 0xffffffff))
+    (let [font-size (int (* 0.15 screen-width))
+          label "GAME OVER"]
+      (when (game-over? state)
+        (cpp/DrawText
+         label
+         (int (- (* 0.5 screen-width)
+                 (* 0.5 (cpp/MeasureText label font-size))))
+         (int (- (* 0.5 screen-height)
+                 (* 0.5 font-size)))
+         font-size
+         (cpp/GetColor 0xffffffff))))))
 
 (defn draw-frame! [state]
   (cpp/ClearBackground cpp/BLACK)
