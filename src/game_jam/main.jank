@@ -65,10 +65,12 @@
 
 (defn get-gamepad []
   (loop [i 0]
-    (or (when (and (cpp/IsGamepadAvailable i)
-                   (str/includes? (cpp/GetGamepadName i) "Xbox"))
-          i)
-        (recur (inc i)))))
+    (if (> i 10)
+      -1
+      (or (when (and (cpp/IsGamepadAvailable i)
+                     (str/includes? (cpp/GetGamepadName i) "Xbox"))
+            i)
+          (recur (inc i))))))
 
 (defn handle-input [{:keys [dt] :as state}]
   (let [gamepad (int (get-gamepad))]
