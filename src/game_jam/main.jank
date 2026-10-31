@@ -33,19 +33,6 @@
 ;; TODO:
 ;; - render frog health
 ;; - automatic fly spawning
-;; - flys should fly after spawn
-;;  - should be able to pull tongue?
-;; - flys explode after death timer
-;;   - lower frog health
-
-;; IDEAS:
-;; - bugs that dies will take a part of the health away
-;; - bugs you eat will heal you
-;; - you goal is to eat more bugs that die to keep yourself alive?
-
-(comment
-  (cpp/Vector2Zero)
-  (cpp/Vector2Length {:x 1 :y 1}))
 
 (def screen-width 1920)
 (def screen-height 1080)
@@ -388,10 +375,3 @@
   (p/open {:launcher :auto})
   (add-tap #'p/submit)
   (tap> ::hi))
-
-;; tongue animation
-;; add state between flying and eating, "trying to eat"
-;; the target fly-id goes in this new map and the value is when the lock-on started
-;; during the lock the tongue cause use the delta to know how far along it
-;; should reach for the fly
-;; the fly can still escape here
