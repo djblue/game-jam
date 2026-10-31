@@ -277,10 +277,24 @@
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
 
-(defn draw-tongue! [{:keys [frog-eating] {p-mouth :position} :frog-mouth :as state}]
+(defn draw-tongue! [{:keys [timer frog-eating] {p-mouth :position} :frog-mouth :as state}]
   (doseq [frog-id frog-eating
-          :let [{p-fly :position} (get-in state [:flys frog-id])]]
-    (cpp/DrawLineEx p-mouth p-fly 5 (cpp/GetColor 0x0000ffff))))
+          :let [{eat-timer :eat-timer p-fly :position} (get-in state [:flys frog-id])
+                time-to-eat 1
+                total-distance (cpp/Vector2Distance p-mouth p-fly)
+                linear (/ (- timer eat-timer) time-to-eat)
+                length (* (/ (cpp/exp (* 20 linear))
+                             (cpp/exp (* 20 1)))
+                          total-distance)
+                target (cpp/Vector2MoveTowards p-mouth p-fly length)]]
+    ;; outline
+    (cpp/DrawLineEx p-mouth target 44 (cpp/GetColor 0x000000ff))
+    (cpp/DrawCircleV target 22 (cpp/GetColor 0x000000ff))
+    (cpp/DrawCircleV p-mouth 22 (cpp/GetColor 0x000000ff))
+
+    (cpp/DrawLineEx p-mouth target 40 (cpp/GetColor 0xff6464ff))
+    (cpp/DrawCircleV target 20 (cpp/GetColor 0xff6464ff))
+    (cpp/DrawCircleV p-mouth 20 (cpp/GetColor 0xff6464ff))))
 
 (defn draw-flys! [{:keys [flys timer]}]
   (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
@@ -364,3 +378,10 @@
   (p/open {:launcher :auto})
   (add-tap #'p/submit)
   (tap> ::hi))
+
+;; tongue animation
+;; add state between flying and eating, "trying to eat"
+;; the target fly-id goes in this new map and the value is when the lock-on started
+;; during the lock the tongue cause use the delta to know how far along it
+;; should reach for the fly
+;; the fly can still escape here
