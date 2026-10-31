@@ -272,6 +272,16 @@
   (cpp/DrawTexture (:background_fill @assets) 0 0 cpp/WHITE)
   (cpp/DrawTexture (:background_lines @assets) 0 0 cpp/WHITE))
 
+(defn draw-eyes! [{{p :position} :frog-mouth}]
+  (let [left-eye    (cpp/Vector2 500 140)
+        right-eye   (cpp/Vector2 1100 140)
+        left-pupil  (cpp/Vector2MoveTowards left-eye p 38)
+        right-pupil (cpp/Vector2MoveTowards right-eye p 38)]
+    (cpp/DrawCircleV left-eye 80 cpp/WHITE)
+    (cpp/DrawCircleV left-pupil 40 cpp/BLACK)
+    (cpp/DrawCircleV right-eye 80 cpp/WHITE)
+    (cpp/DrawCircleV right-pupil 40 cpp/BLACK)))
+
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
 
@@ -349,6 +359,7 @@
 (defn draw-frame! [state]
   (cpp/ClearBackground cpp/BLACK)
   (draw-background! state)
+  (draw-eyes! state)
   (draw-mouth! state)
   (draw-tongue! state)
   (draw-flys! state)
