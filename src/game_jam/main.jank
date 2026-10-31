@@ -191,18 +191,16 @@
   (let [speed (* 0.15 screen-width)]
     (reduce-kv
      (fn [state fly-id {p :position v :velocity}]
-       (if (contains? frog-eating fly-id)
-         state
-         (let [p (cpp/Vector2Add p (cpp/Vector2Scale v dt))
-               v (cpp/Vector2Scale
-                  (cpp/Vector2Normalize
-                   (cpp/Vector2
-                    (float (if (neg? (:x v)) -1 1))
-                    (cpp/sin (* 3 2 cpp/PI (/ (:x p) screen-width)))))
-                  speed)]
-           (-> state
-               (update-in [:flys fly-id] assoc :position p :velocity v)
-               (update-in [:flys fly-id] wall-bang)))))
+       (let [p (cpp/Vector2Add p (cpp/Vector2Scale v dt))
+             v (cpp/Vector2Scale
+                (cpp/Vector2Normalize
+                 (cpp/Vector2
+                  (float (if (neg? (:x v)) -1 1))
+                  (cpp/sin (* 3 2 cpp/PI (/ (:x p) screen-width)))))
+                speed)]
+         (-> state
+             (update-in [:flys fly-id] assoc :position p :velocity v)
+             (update-in [:flys fly-id] wall-bang))))
      state
      flys)))
 
@@ -226,7 +224,7 @@
                             p-fly (:position fly)]
                         (cpp/Vector2Scale
                          (cpp/Vector2Normalize (cpp/Vector2Subtract p-fly p-mouth))
-                         (max 1 (* 0.75 (cpp/Vector2Length v-mouth)))))))
+                         (cpp/Vector2Length v-mouth)))))
 
          :else state)))
    state
