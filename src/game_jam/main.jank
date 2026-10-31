@@ -6,6 +6,13 @@
             "raymath.h"
             "game_jam/convert.hpp"))
 
+(defmacro with-scale [scale & body]
+  `(try
+     (cpp/rlPushMatrix)
+     (cpp/rlScalef ~scale ~scale 1)
+     ~@body
+     (finally (cpp/rlPopMatrix))))
+
 (defonce assets (atom {}))
 
 (defn load-asset! [{:keys [id path replace]}]
@@ -89,6 +96,12 @@
           (recur (inc i))))))
 
 (defn handle-input [{:keys [dt] :as state}]
+  (when (cpp/IsKeyPressed cpp/KEY_F)
+    (cpp/ToggleBorderlessWindowed))
+  (when (cpp/IsKeyPressed cpp/KEY_ONE)
+    (cpp/SetWindowSize 1280 720))
+  (when (cpp/IsKeyPressed cpp/KEY_TWO)
+    (cpp/SetWindowSize 1920 1080))
   (let [gamepad (int (get-gamepad))]
     (if (or (cpp/IsKeyPressed cpp/KEY_R)
             (cpp/IsGamepadButtonPressed gamepad cpp/GAMEPAD_BUTTON_MIDDLE_LEFT))
@@ -344,13 +357,14 @@
        (cpp/GetColor 0xffffffff)))))
 
 (defn draw-frame! [state]
-  (cpp/ClearBackground cpp/BLACK)
-  (draw-background! state)
-  (draw-eyes! state)
-  (draw-mouth! state)
-  (draw-tongue! state)
-  (draw-flys! state)
-  (draw-status! state)
+  (with-scale (/ (float (cpp/GetScreenWidth)) screen-width)
+    (cpp/ClearBackground cpp/BLACK)
+    (draw-background! state)
+    (draw-eyes! state)
+    (draw-mouth! state)
+    (draw-tongue! state)
+    (draw-flys! state)
+    (draw-status! state))
   nil)
 
 (defn -main [& args]
