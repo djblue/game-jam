@@ -376,11 +376,11 @@
   nil)
 
 (defn -main [& args]
+  (cpp/SetConfigFlags cpp/FLAG_MSAA_4X_HINT)
   (cpp/InitWindow screen-width screen-height "froggy")
   (load-assets!)
   (cpp/SetTargetFPS 60)
   (cpp/SetExitKey cpp/KEY_NULL)
-  (cpp/SetConfigFlags cpp/FLAG_MSAA_4X_HINT)
   (load-gamepad-mappings!)
   (while (cpp/! (cpp/WindowShouldClose))
     (let [next-state (swap! state-atom update-world)]
