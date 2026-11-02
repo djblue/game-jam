@@ -21,6 +21,12 @@
     (cpp/UnloadImage image)))
 
 (defn load-assets! []
+  (load-asset! {:id :teeth-top
+                :path "./resources/mouth/teeth-top.png"})
+  (load-asset! {:id :teeth-btm
+                :path "./resources/mouth/teeth-btm.png"})
+  (load-asset! {:id :mouth-hole
+                :path "./resources/mouth/mouth-hole.png"})
   (load-asset! {:id :background-fill
                 :path "./resources/background/background-fill.png"})
   (load-asset! {:id :pupil-l
@@ -40,13 +46,17 @@
 (def screen-height 1080)
 (def deadzone 0.05)
 
-(def pupil-size 50)
+(def pupil-size-half 50)
+(def mouth-hole-size-half 105)
+(def teeth-width-half 85)
+(def teeth-top-outline-offset 12)
+(def teeth-btm-outline-offset 68)
 
 (def initial-state
   {:frog-mouth {:position
                 {:x (* 0.5 screen-width)
                  :y (* 0.5 screen-height)}
-                :radius 75
+                :radius 105
                 :velocity {:x 0 :y 0}}
    :frog-tongues 1
    :frog-eating #{}
@@ -273,11 +283,15 @@
         right-eye   (cpp/Vector2 1102 147)
         left-pupil  (cpp/Vector2MoveTowards left-eye p 52)
         right-pupil (cpp/Vector2MoveTowards right-eye p 52)]
-    (cpp/DrawTexture (:pupil-l @assets) (int (- (.-x left-pupil) pupil-size)) (int (- (.-y left-pupil) pupil-size)) cpp/WHITE)
-    (cpp/DrawTexture (:pupil-r @assets) (int (- (.-x right-pupil) pupil-size)) (int (- (.-y right-pupil) pupil-size)) cpp/WHITE)))
+    (cpp/DrawTexture (:pupil-l @assets) (int (- (.-x left-pupil) pupil-size-half)) (int (- (.-y left-pupil) pupil-size-half)) cpp/WHITE)
+    (cpp/DrawTexture (:pupil-r @assets) (int (- (.-x right-pupil) pupil-size-half)) (int (- (.-y right-pupil) pupil-size-half)) cpp/WHITE)))
 
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
-  (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
+  (cpp/DrawCircleV p (+ (float r) 12.0) (cpp/GetColor 0x533b2dff))
+  (cpp/DrawCircleV p (float r) (cpp/GetColor 0x845143ff))
+  (cpp/DrawTexture (:mouth-hole @assets) (int (- (:x p) mouth-hole-size-half)) (int (- (:y p) mouth-hole-size-half)) cpp/WHITE)
+  (cpp/DrawTexture (:teeth-top @assets) (int (- (:x p) teeth-width-half)) (int (- (- (:y p) teeth-top-outline-offset) r)) cpp/WHITE)
+  (cpp/DrawTexture (:teeth-btm @assets) (int (- (:x p) teeth-width-half)) (int (+ (- (:y p) teeth-btm-outline-offset) r)) cpp/WHITE))
 
 (defn draw-tongue! [{:keys [timer frog-eating] {p-mouth :position} :frog-mouth :as state}]
   (doseq [frog-id frog-eating
