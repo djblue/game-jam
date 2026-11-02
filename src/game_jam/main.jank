@@ -15,23 +15,18 @@
 
 (defonce assets (atom {}))
 
-(defn load-asset! [{:keys [id path replace]}]
-  (let [image (cpp/LoadImage path)]
-    (doseq [[from to] replace]
-      (cpp/ImageColorReplace (cpp/& image) (cpp/GetColor from) (cpp/GetColor to)))
+(defn load-asset! [{:keys [id path]}]
+  (let [image (cpp/LoadImage path)] 
     (swap! assets assoc id (cpp/LoadTextureFromImage image))
     (cpp/UnloadImage image)))
 
 (defn load-assets! []
-  (load-asset! {:id :background_fill
-                :path "./resources/background/background_fill.png"
-                :replace {0xff0000ff 0x679153ff
-                          0x00ff00ff 0x95daf4ff}})
-  (load-asset! {:id :background_lines
-                :path "./resources/background/background_lines.png"
-                :replace {0xff0000ff 0x3e5c30ff
-                          0x00ff00ff 0xab5d46ff
-                          0x0000ffff 0x278282ff}}))
+  (load-asset! {:id :background-fill
+                :path "./resources/background/background-fill.png"})
+  (load-asset! {:id :pupil-l
+                :path "./resources/background/pupil-l.png"})
+  (load-asset! {:id :pupil-r
+                :path "./resources/background/pupil-r.png"}))
 
 (defn load-gamepad-mappings! []
   (doseq [mapping (str/split-lines (slurp "./resources/gamepad-mappings.txt"))]
@@ -44,6 +39,8 @@
 (def screen-width 1920)
 (def screen-height 1080)
 (def deadzone 0.05)
+
+(def pupil-size 50)
 
 (def initial-state
   {:frog-mouth {:position
@@ -269,18 +266,15 @@
       (-> update-time apply-physics))))
 
 (defn draw-background! [_state]
-  (cpp/DrawTexture (:background_fill @assets) 0 0 cpp/WHITE)
-  (cpp/DrawTexture (:background_lines @assets) 0 0 cpp/WHITE))
+  (cpp/DrawTexture (:background-fill @assets) 0 0 cpp/WHITE))
 
 (defn draw-eyes! [{{p :position} :frog-mouth}]
-  (let [left-eye    (cpp/Vector2 500 140)
-        right-eye   (cpp/Vector2 1100 140)
-        left-pupil  (cpp/Vector2MoveTowards left-eye p 38)
-        right-pupil (cpp/Vector2MoveTowards right-eye p 38)]
-    (cpp/DrawCircleV left-eye 80 cpp/WHITE)
-    (cpp/DrawCircleV left-pupil 40 cpp/BLACK)
-    (cpp/DrawCircleV right-eye 80 cpp/WHITE)
-    (cpp/DrawCircleV right-pupil 40 cpp/BLACK)))
+  (let [left-eye    (cpp/Vector2 518 147)
+        right-eye   (cpp/Vector2 1102 147)
+        left-pupil  (cpp/Vector2MoveTowards left-eye p 52)
+        right-pupil (cpp/Vector2MoveTowards right-eye p 52)]
+    (cpp/DrawTexture (:pupil-l @assets) (int (- (.-x left-pupil) pupil-size)) (int (- (.-y left-pupil) pupil-size)) cpp/WHITE)
+    (cpp/DrawTexture (:pupil-r @assets) (int (- (.-x right-pupil) pupil-size)) (int (- (.-y right-pupil) pupil-size)) cpp/WHITE)))
 
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0xff0000ff)))
