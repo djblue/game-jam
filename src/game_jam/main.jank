@@ -16,7 +16,7 @@
 (defonce assets (atom {}))
 
 (defn load-asset! [{:keys [id path]}]
-  (let [image (cpp/LoadImage path)] 
+  (let [image (cpp/LoadImage path)]
     (swap! assets assoc id (cpp/LoadTextureFromImage image))
     (cpp/UnloadImage image)))
 
@@ -52,10 +52,16 @@
 (def teeth-top-outline-offset 12)
 (def teeth-btm-outline-offset 68)
 
+(def frog-start-x 32)
+(def frog-end-x 1620)
+(def frog-start-y 140)
+(def frog-end-y screen-height)
+
+(def frog-mouth-start {:x (+ frog-start-x (* 0.5 (- frog-end-x frog-start-x)))
+                       :y (+ frog-start-y (* 0.5 (- frog-end-y frog-start-y)))})
+
 (def initial-state
-  {:frog-mouth {:position
-                {:x (* 0.5 screen-width)
-                 :y (* 0.5 screen-height)}
+  {:frog-mouth {:position frog-mouth-start
                 :radius 105
                 :velocity {:x 0 :y 0}}
    :frog-tongues 1
@@ -287,6 +293,22 @@
     (cpp/DrawTexture (:pupil-r @assets) (int (- (.-x right-pupil) pupil-size-half)) (int (- (.-y right-pupil) pupil-size-half)) cpp/WHITE)))
 
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
+  (let [green (cpp/GetColor 0x3e5c30ff)
+        light-green (cpp/GetColor 0x679153ff)
+        mouth-top-start (cpp/Vector2Subtract frog-mouth-start (cpp/Vector2 0 (+ (float r) 6.0)))
+        mouth-top-end (cpp/Vector2Subtract p (cpp/Vector2 0 (+ (float r) 6.0)))
+        mouth-bottom-start (cpp/Vector2Add frog-mouth-start (cpp/Vector2 0 (+ (float r) 6.0)))
+        mouth-bottom-end (cpp/Vector2Add p (cpp/Vector2 0 (+ (float r) 6.0)))]
+    (cpp/DrawTriangle mouth-top-start mouth-top-end mouth-bottom-end light-green)
+    (cpp/DrawTriangle mouth-top-start mouth-bottom-end mouth-bottom-start light-green)
+    (cpp/DrawTriangle mouth-top-start mouth-bottom-end mouth-top-end light-green)
+    (cpp/DrawTriangle mouth-top-start mouth-bottom-start mouth-bottom-end light-green)
+
+    (cpp/DrawLineEx mouth-top-start mouth-top-end 12.0 green)
+    (cpp/DrawCircleV mouth-top-start 6.0 green)
+    (cpp/DrawLineEx mouth-bottom-start mouth-bottom-end 12.0 green)
+    (cpp/DrawCircleV mouth-bottom-start 6.0 green))
+
   (cpp/DrawCircleV p (+ (float r) 12.0) (cpp/GetColor 0x533b2dff))
   (cpp/DrawCircleV p (float r) (cpp/GetColor 0x845143ff))
   (cpp/DrawTexture (:mouth-hole @assets) (int (- (:x p) mouth-hole-size-half)) (int (- (:y p) mouth-hole-size-half)) cpp/WHITE)
