@@ -343,8 +343,11 @@
   (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
           :let [time-alive (str (- timer spawn-time))
                 time-alive (subs time-alive 0 (min (count time-alive) 4))
-                text-size 20]] 
-    (cpp/DrawTexture (:fly-idle-0 @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
+                text-size 20
+                fly-asset (if (< (- timer (int timer)) 0.5)
+                            :fly-idle-0
+                            :fly-idle-1)]] 
+    (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
     (cpp/DrawText
      time-alive
      (int (- (:x p) r))
