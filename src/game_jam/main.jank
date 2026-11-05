@@ -339,14 +339,21 @@
     (cpp/DrawCircleV target 20 (cpp/GetColor 0xff6464ff))
     (cpp/DrawCircleV p-mouth 20 (cpp/GetColor 0xff6464ff))))
 
+(def fly-flapping-animation {:frame-time 0.05
+                             :frames [{:asset :fly-idle-0}
+                                      {:asset :fly-idle-1}]})
+(defn select-animation-frame [animation time-alive]
+  (let [total-anim-time (* (:frame-time animation) (count (:frames animation)))
+        animation-segment (cpp/fmod time-alive (float total-anim-time))
+        current-frame (int (/ animation-segment (:frame-time animation)))]
+    (get-in animation [:frames current-frame :asset])))
+
 (defn draw-flys! [{:keys [flys timer]}]
   (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
           :let [time-alive (str (- timer spawn-time))
                 time-alive (subs time-alive 0 (min (count time-alive) 4))
                 text-size 20
-                fly-asset (if (< (- timer (int timer)) 0.5)
-                            :fly-idle-0
-                            :fly-idle-1)]] 
+                fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]] 
     (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
     (cpp/DrawText
      time-alive
