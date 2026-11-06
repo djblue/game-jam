@@ -34,6 +34,33 @@ namespace jank::runtime
   };
 
   template <>
+  struct convert<Vector3>
+  {
+    static obj::persistent_array_map_ref into_object(Vector3 const &v)
+    {
+      static auto const x(__rt_ctx->intern_keyword("x").expect_ok());
+      static auto const y(__rt_ctx->intern_keyword("y").expect_ok());
+      static auto const z(__rt_ctx->intern_keyword("z").expect_ok());
+
+      obj::transient_array_map m{};
+
+      m.assoc_in_place(x, make_box(v.x));
+      m.assoc_in_place(y, make_box(v.y));
+      m.assoc_in_place(z, make_box(v.z));
+
+      return m.to_persistent();
+    }
+
+    static Vector3 from_object(object_ref const o)
+    {
+      static auto const x(__rt_ctx->intern_keyword("x").expect_ok());
+      static auto const y(__rt_ctx->intern_keyword("y").expect_ok());
+      static auto const z(__rt_ctx->intern_keyword("z").expect_ok());
+      return Vector3(o.get(x).to_real(), o.get(y).to_real(), o.get(z).to_real());
+    }
+  };
+
+  template <>
   struct convert<Color>
   {
     static obj::small_integer_ref into_object(Color const &v)

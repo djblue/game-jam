@@ -347,10 +347,15 @@
 (defn draw-mouth! [{{p :position r :radius} :frog-mouth}]
   (let [green (cpp/GetColor 0x3e5c30ff)
         light-green (cpp/GetColor 0x679153ff)
-        mouth-top-start (cpp/Vector2Subtract frog-mouth-start (cpp/Vector2 0 (+ (float r) 6.0)))
-        mouth-top-end (cpp/Vector2Subtract p (cpp/Vector2 0 (+ (float r) 6.0)))
-        mouth-bottom-start (cpp/Vector2Add frog-mouth-start (cpp/Vector2 0 (+ (float r) 6.0)))
-        mouth-bottom-end (cpp/Vector2Add p (cpp/Vector2 0 (+ (float r) 6.0)))]
+        forward-vec (cpp/Vector2Normalize (cpp/Vector2 (- (:x p) (:x frog-mouth-start)) (- (:y p) (:y frog-mouth-start))))
+        forward-vec3 {:x (.-x forward-vec) :y (.-y forward-vec) :z 0}
+        up-vec3 {:x 0 :y 0 :z 1}
+        right-vec3 (cpp/Vector3CrossProduct forward-vec3 up-vec3)
+        right-vec (cpp/Vector2 (* (.-x right-vec3) r) (* (.-y right-vec3) r))
+        mouth-top-start (cpp/Vector2Add frog-mouth-start right-vec)
+        mouth-top-end (cpp/Vector2Add p right-vec)
+        mouth-bottom-start (cpp/Vector2Subtract frog-mouth-start right-vec)
+        mouth-bottom-end (cpp/Vector2Subtract p right-vec)]
     (cpp/DrawTriangle mouth-top-start mouth-top-end mouth-bottom-end light-green)
     (cpp/DrawTriangle mouth-top-start mouth-bottom-end mouth-bottom-start light-green)
     (cpp/DrawTriangle mouth-top-start mouth-bottom-end mouth-top-end light-green)
