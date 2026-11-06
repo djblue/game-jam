@@ -65,12 +65,14 @@
 (def frog-start-y 140)
 (def frog-end-y screen-height)
 
+(def frog-mouth-radius-start 105)
+
 (def frog-mouth-start {:x (+ frog-start-x (* 0.5 (- frog-end-x frog-start-x)))
                        :y (+ frog-start-y (* 0.5 (- frog-end-y frog-start-y)))})
 
 (def initial-state
   {:frog-mouth {:position frog-mouth-start
-                :radius 105
+                :radius frog-mouth-radius-start
                 :velocity {:x 0 :y 0}}
    :frog-tongues 1
    :frog-eating #{}
@@ -196,7 +198,7 @@
 
 (defn update-fly-spawn-timer [{:keys [fly-ids fly-spawn-timer] :as state}]
   (-> state
-      (assoc :fly-spawn-timer (max (- 2.5 (* fly-ids 0.01)) 0.5))))
+      (assoc :fly-spawn-timer (max (- 2.5 (* fly-ids 0.02)) 0.5))))
 
 (defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
   (if (frog-max-tongues? state)
@@ -250,7 +252,7 @@
              (update :frog-eating disj fly-id)
              (update :flys dissoc fly-id)
              (update :score + 1)
-             (update :frog-health (fn [h] (min 100 (+ h 10)))))
+             (update :frog-health (fn [h] (min 100 (+ h 1)))))
 
          (> (cpp/Vector2Distance (:position fly) (:position frog-mouth))
             (* 2.5 (+ (:radius fly) (:radius frog-mouth))))
@@ -279,6 +281,12 @@
                               (cpp/Vector2Scale (cpp/Vector2Normalize v)
                                                 (* 0.25 (cpp/Vector2Length v) dt))))))))
 
+(defn update-mouth-radius [{:keys [frog-mouth score] :as state}]
+  (assoc state
+         :frog-mouth
+      (assoc frog-mouth
+             :radius (+ frog-mouth-radius-start (* score 0.75)))))
+
 (defn apply-physics [state]
   (-> state
       (route-flys)
@@ -303,7 +311,7 @@
       apply-damage 
 
       (and (not done?) (not (:paused? state)))
-      (-> spawn-fly-with-timer update-fly-spawn-timer update-time apply-physics))))
+      (-> spawn-fly-with-timer update-fly-spawn-timer update-mouth-radius update-time apply-physics))))
 
 (defn draw-background! [_state]
   (cpp/DrawTexture (:background-fill @assets) 0 0 cpp/WHITE))
