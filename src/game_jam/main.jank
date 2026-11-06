@@ -44,7 +44,6 @@
 
 ;; TODO:
 ;; - render frog health
-;; - automatic fly spawning
 
 (def screen-width 1920)
 (def screen-height 1080)
@@ -74,6 +73,8 @@
    :frog-health 100
    :fly-ids 0
    :flys {}
+   :fly-spawn-timer 2.0
+   :fly-spawn-time-count 0 
    :timer 0
    :dt 0})
 
@@ -180,6 +181,14 @@
    state
    flys))
 
+(defn spawn-fly-with-timer [{:keys [fly-spawn-time-count fly-spawn-timer dt] :as state}] 
+  (if (> fly-spawn-time-count fly-spawn-timer)
+    (-> state
+      (assoc :fly-spawn-time-count 0)
+      (spawn-fly))
+    (-> state
+        (update :fly-spawn-time-count + dt))))
+
 (defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
   (if (frog-max-tongues? state)
     state
@@ -281,10 +290,10 @@
       :always handle-input
 
       (not done?)
-      apply-damage
+      apply-damage 
 
       (and (not done?) (not (:paused? state)))
-      (-> update-time apply-physics))))
+      (-> spawn-fly-with-timer update-time apply-physics))))
 
 (defn draw-background! [_state]
   (cpp/DrawTexture (:background-fill @assets) 0 0 cpp/WHITE))
@@ -362,7 +371,7 @@
      text-size
      (cpp/GetColor 0xffffffff))))
 
-(defn draw-status! [{:keys [paused? frog-health] :as state}]
+(defn draw-status! [{:keys [paused? frog-health] :as state}] 
   (let [font-size 40
         frog-health-str (str (max frog-health 0))]
     (cpp/DrawText
