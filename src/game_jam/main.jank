@@ -364,7 +364,7 @@
                 text-size 20
                 fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]] 
     (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
-    (cpp/DrawText
+    #_(cpp/DrawText
      time-alive
      (int (- (:x p) r))
      (int (- (:y p) r text-size))
