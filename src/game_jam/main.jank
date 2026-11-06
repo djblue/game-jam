@@ -33,6 +33,10 @@
                 :path "./resources/background/pupil-l.png"})
   (load-asset! {:id :pupil-r
                 :path "./resources/background/pupil-r.png"})
+  (load-asset! {:id :hp
+                :path "./resources/background/hp.png"})
+  (load-asset! {:id :score
+                :path "./resources/background/score.png"})
   (load-asset! {:id :fly-idle-0
                 :path "./resources/fly/idle-0.png"})
   (load-asset! {:id :fly-idle-1
@@ -75,6 +79,7 @@
    :flys {}
    :fly-spawn-timer 2.0
    :fly-spawn-time-count 0 
+   :score 0
    :timer 0
    :dt 0})
 
@@ -244,6 +249,7 @@
          (-> state
              (update :frog-eating disj fly-id)
              (update :flys dissoc fly-id)
+             (update :score + 1)
              (update :frog-health (fn [h] (min 100 (+ h 10)))))
 
          (> (cpp/Vector2Distance (:position fly) (:position frog-mouth))
@@ -301,6 +307,34 @@
 
 (defn draw-background! [_state]
   (cpp/DrawTexture (:background-fill @assets) 0 0 cpp/WHITE))
+
+(defn draw-game-stats! [{:keys [frog-health score] :as state}]
+  (let [icons-x-pos (int (- screen-width 160))
+        text-x-offset 175
+        text-y-offset 45
+        hp-y-pos 250
+        score-y-pos 450
+        font-size 60
+        frog-health-str (str (max frog-health 0))
+        score-str (str score)]
+    (cpp/DrawTexture (:hp @assets) icons-x-pos hp-y-pos cpp/WHITE)
+    (cpp/DrawTexture (:score @assets) icons-x-pos score-y-pos cpp/WHITE)
+    (cpp/DrawText
+     frog-health-str
+     (int (- screen-width
+             text-x-offset
+             (cpp/MeasureText frog-health-str font-size)))
+     (+ hp-y-pos text-y-offset 15)
+     font-size
+     (cpp/GetColor 0x590000ff))
+    (cpp/DrawText
+     score-str
+     (int (- screen-width
+             text-x-offset
+             (cpp/MeasureText score-str font-size)))
+     (+ score-y-pos text-y-offset)
+     font-size
+     (cpp/GetColor 0x373e05ff))))
 
 (defn draw-eyes! [{{p :position} :frog-mouth}]
   (let [left-eye    (cpp/Vector2 518 147)
@@ -375,15 +409,8 @@
      text-size
      (cpp/GetColor 0xffffffff))))
 
-(defn draw-status! [{:keys [paused? frog-health] :as state}] 
-  #_(cpp/DrawText
-   (str fly-spawn-timer)
-   50
-   50
-   40
-   (cpp/GetColor 0xffffffff))
-  (let [font-size 40
-        frog-health-str (str (max frog-health 0))]
+(defn draw-status! [{:keys [paused?] :as state}] 
+  (let [font-size 40 ]
     (cpp/DrawText
      (if paused?
        "PAUSED"
@@ -391,14 +418,7 @@
      10
      10
      font-size
-     (cpp/GetColor 0xffffffff))
-    (cpp/DrawText
-     frog-health-str
-     (int (- (* 0.5 screen-width)
-             (* 0.5 (cpp/MeasureText frog-health-str font-size))))
-     10
-     font-size
-     (cpp/GetColor 0xffffffff))
+     (cpp/GetColor 0xffffffff)) 
     (let [font-size (int (* 0.15 screen-width))
           label "GAME OVER"]
       (when (game-over? state)
@@ -424,6 +444,7 @@
   (with-scale (/ (float (cpp/GetScreenWidth)) screen-width)
     (cpp/ClearBackground cpp/BLACK)
     (draw-background! state)
+    (draw-game-stats! state)
     (draw-eyes! state)
     (draw-mouth! state)
     (draw-tongue! state)
