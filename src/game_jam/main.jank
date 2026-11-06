@@ -189,6 +189,10 @@
     (-> state
         (update :fly-spawn-time-count + dt))))
 
+(defn update-fly-spawn-timer [{:keys [fly-ids fly-spawn-timer] :as state}]
+  (-> state
+      (assoc :fly-spawn-timer (max (- 2.5 (* fly-ids 0.01)) 0.5))))
+
 (defn check-flys [{:keys [flys frog-eating frog-mouth timer] :as state}]
   (if (frog-max-tongues? state)
     state
@@ -293,7 +297,7 @@
       apply-damage 
 
       (and (not done?) (not (:paused? state)))
-      (-> spawn-fly-with-timer update-time apply-physics))))
+      (-> spawn-fly-with-timer update-fly-spawn-timer update-time apply-physics))))
 
 (defn draw-background! [_state]
   (cpp/DrawTexture (:background-fill @assets) 0 0 cpp/WHITE))
@@ -372,6 +376,12 @@
      (cpp/GetColor 0xffffffff))))
 
 (defn draw-status! [{:keys [paused? frog-health] :as state}] 
+  #_(cpp/DrawText
+   (str fly-spawn-timer)
+   50
+   50
+   40
+   (cpp/GetColor 0xffffffff))
   (let [font-size 40
         frog-health-str (str (max frog-health 0))]
     (cpp/DrawText
