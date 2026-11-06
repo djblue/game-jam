@@ -186,13 +186,13 @@
    state
    flys))
 
-(defn spawn-fly-with-timer [{:keys [fly-spawn-time-count fly-spawn-timer dt] :as state}] 
-  (if (> fly-spawn-time-count fly-spawn-timer)
-    (-> state
-      (assoc :fly-spawn-time-count 0)
-      (spawn-fly))
-    (-> state
-        (update :fly-spawn-time-count + dt))))
+(defn spawn-fly-with-timer [{:keys [fly-spawn-time-count fly-spawn-timer dt] :as state}]
+  (-> (if (> fly-spawn-time-count fly-spawn-timer)
+        (-> state
+            (assoc :fly-spawn-time-count 0)
+            (spawn-fly))
+        state)
+      (update :fly-spawn-time-count + dt)))
 
 (defn update-fly-spawn-timer [{:keys [fly-ids fly-spawn-timer] :as state}]
   (-> state
