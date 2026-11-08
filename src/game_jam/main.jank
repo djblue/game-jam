@@ -19,7 +19,8 @@
 
 (def resource-paths
   ["./resources/"
-   (str (cpp/getenv "APPDIR") "/resources/")])
+   (str (cpp/getenv "APPDIR") "/resources/")
+   (str (cpp/getenv "APPDIR") "/Resources/")])
 
 (defn- resolve-resource [path]
   (some

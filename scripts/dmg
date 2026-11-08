@@ -1,0 +1,34 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+cd target
+
+mkdir -p Froggy.app
+
+cp -r ../resources/app/Contents Froggy.app
+cp release/froggy Froggy.app/Contents/MacOS
+
+mkdir -p Froggy.app/Contents/Resources
+cp -r ../resources/* Froggy.app/Contents/Resources
+
+BIN='Froggy.app/Contents/MacOS/froggy'
+
+# Fixes: dyld[57925]: duplicate LC_RPATH
+otool -l "$BIN" \
+  | grep ' path ' \
+  | sed 's/^ *path //' \
+  | sed 's/ (offset [0-9]*)//' \
+  | xargs -I{} install_name_tool -delete_rpath "{}" "$BIN"
+
+RAYLIB_LIB=$(ls -d release/_cache/raylib-sys-*-out-*/lib | tail -1)
+
+dylibbundler -od -b \
+             -x "$BIN" \
+             -d Froggy.app/Contents/Frameworks/ \
+             -p @executable_path/../Frameworks/ \
+             -s "$RAYLIB_LIB"
+
+codesign --force --deep -s - Froggy.app
+
+hdiutil create -volname Froggy -srcfolder Froggy.app -ov -format UDZO Froggy.dmg

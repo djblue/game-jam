@@ -7,7 +7,10 @@
   :main game-jam.main
   :aliases {"appimage" ["do"
                         ["with-profile" "+release" "compile" "--name" "froggy"]
-                        ["shell" "scripts/appimage"]]}
+                        ["shell" "scripts/appimage"]]
+            "dmg" ["do"
+                   ["with-profile" "+release" "compile" "--name" "froggy"]
+                   ["shell" "scripts/dmg"]]}
   :jank {:include-dirs ["src"]}
   :profiles {:base {:jank {:target-dir "target/debug"
                            :optimization-level 0
