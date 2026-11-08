@@ -21,7 +21,7 @@ otool -l "$BIN" \
   | sed 's/ (offset [0-9]*)//' \
   | xargs -I{} install_name_tool -delete_rpath "{}" "$BIN"
 
-RAYLIB_LIB=$(ls -d release/_cache/raylib-sys-*-out-*/lib | tail -1)
+RAYLIB_LIB="$(pwd)/$(ls -d release/_cache/raylib-sys-*-out-*/lib | tail -1)"
 
 dylibbundler -od -b \
              -x "$BIN" \
