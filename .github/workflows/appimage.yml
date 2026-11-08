@@ -3,9 +3,9 @@ name: AppImage
 on:
   push:
     branches: [ master, main ]
-    tags: [ 'v*' ]
   pull_request:
     branches: [ master, main ]
+  workflow_call:
 
 jobs:
   appimage:
@@ -32,17 +32,3 @@ jobs:
         if-no-files-found: error
         name: appimage
         path: target/Froggy-*.AppImage
-  release:
-    needs: appimage
-    if: github.ref_type == 'tag'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-    - uses: actions/download-artifact@v4
-      with:
-        name: appimage
-    - uses: softprops/action-gh-release@v3
-      with:
-        files: '*.AppImage'
-        generate_release_notes: true
