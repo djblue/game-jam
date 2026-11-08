@@ -1,0 +1,26 @@
+name: Release
+
+on:
+  push:
+    tags: [ 'v*' ]
+
+jobs:
+  appimage:
+    uses: ./.github/workflows/appimage.yml
+  dmg:
+    uses: ./.github/workflows/dmg.yml
+  release:
+    needs: [ appimage, dmg ]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+    - uses: actions/download-artifact@v4
+      with:
+        merge-multiple: true
+    - uses: softprops/action-gh-release@v3
+      with:
+        files: |
+          *.AppImage
+          *.dmg
+        generate_release_notes: true
