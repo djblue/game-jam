@@ -16,6 +16,9 @@ BIN='Froggy.app/Contents/MacOS/froggy'
 
 RAYLIB_LIB="$(pwd)/$(ls -d release/_cache/raylib-sys-*-out-*/lib | tail -1)"
 
+# Hack to resolve libraylib.600.dylib in CI
+ln -sf "$RAYLIB_LIB/libraylib.600.dylib" libraylib.600.dylib
+
 dylibbundler -od -b \
              -x "$BIN" \
              -d Froggy.app/Contents/Frameworks/ \
