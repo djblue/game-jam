@@ -1,5 +1,7 @@
 # froggy
 
+![preview](https://img.itch.zone/aW1nLzMxOTUyMjYwLnBuZw==/315x250%23c/ySTKnv.png)
+
 ## Build
 
 To run or build the game from source, you will need a few dependencies installed:
