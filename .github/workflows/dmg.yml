@@ -1,0 +1,33 @@
+name: DMG
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+  workflow_call:
+
+jobs:
+  dmg:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v6
+      with:
+        lfs: true
+    - run: |
+        brew install dylibbundler
+    - uses: actions/setup-java@v6
+      with:
+        distribution: 'temurin'
+        java-version: '21'
+    - uses: DeLaGuardo/setup-clojure@13.7.0
+      with:
+        lein: latest
+        bb: latest
+    - uses: jank-lang/setup-jank@main
+    - run: lein dmg
+    - uses: actions/upload-artifact@v4
+      with:
+        if-no-files-found: error
+        name: dmg
+        path: target/*.dmg
