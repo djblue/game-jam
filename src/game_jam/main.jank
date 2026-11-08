@@ -1,10 +1,12 @@
 (ns game-jam.main
   (:require [clojure.string :as str])
-  (:include "raylib.h"
+  (:include "filesystem"
+            "raylib.h"
             "raygui.h"
             "rlgl.h"
             "raymath.h"
-            "game_jam/convert.hpp"))
+            "game_jam/convert.hpp")
+  (:refer-global :rename {std.filesystem.exists fs.exists}))
 
 (defmacro with-scale [scale & body]
   `(try
@@ -15,35 +17,47 @@
 
 (defonce assets (atom {}))
 
+(def resource-paths
+  ["./resources/"
+   (str (cpp/getenv "APPDIR") "/resources/")])
+
+(defn- resolve-resource [path]
+  (some
+   (fn [resource-path]
+     (let [full-path (str resource-path path)]
+       (when (fs.exists (cpp/cast std.string full-path))
+         full-path)))
+   resource-paths))
+
 (defn load-asset! [{:keys [id path]}]
-  (let [image (cpp/LoadImage path)]
+  (let [image (cpp/LoadImage (resolve-resource path))]
     (swap! assets assoc id (cpp/LoadTextureFromImage image))
     (cpp/UnloadImage image)))
 
 (defn load-assets! []
   (load-asset! {:id :teeth-top
-                :path "./resources/mouth/teeth-top.png"})
+                :path "mouth/teeth-top.png"})
   (load-asset! {:id :teeth-btm
-                :path "./resources/mouth/teeth-btm.png"})
+                :path "mouth/teeth-btm.png"})
   (load-asset! {:id :mouth-hole
-                :path "./resources/mouth/mouth-hole.png"})
+                :path "mouth/mouth-hole.png"})
   (load-asset! {:id :background-fill
-                :path "./resources/background/background-fill.png"})
+                :path "background/background-fill.png"})
   (load-asset! {:id :pupil-l
-                :path "./resources/background/pupil-l.png"})
+                :path "background/pupil-l.png"})
   (load-asset! {:id :pupil-r
-                :path "./resources/background/pupil-r.png"})
+                :path "background/pupil-r.png"})
   (load-asset! {:id :hp
-                :path "./resources/background/hp.png"})
+                :path "background/hp.png"})
   (load-asset! {:id :score
-                :path "./resources/background/score.png"})
+                :path "background/score.png"})
   (load-asset! {:id :fly-idle-0
-                :path "./resources/fly/idle-0.png"})
+                :path "fly/idle-0.png"})
   (load-asset! {:id :fly-idle-1
-                :path "./resources/fly/idle-1.png"}))
+                :path "fly/idle-1.png"}))
 
 (defn load-gamepad-mappings! []
-  (doseq [mapping (str/split-lines (slurp "./resources/gamepad-mappings.txt"))]
+  (doseq [mapping (str/split-lines (slurp (resolve-resource "gamepad-mappings.txt")))]
     (cpp/SetGamepadMappings mapping)))
 
 ;; TODO:
@@ -80,7 +94,7 @@
    :fly-ids 0
    :flys {}
    :fly-spawn-timer 2.0
-   :fly-spawn-time-count 0 
+   :fly-spawn-time-count 0
    :score 0
    :timer 0
    :dt 0})
@@ -284,8 +298,8 @@
 (defn update-mouth-radius [{:keys [frog-mouth score] :as state}]
   (assoc state
          :frog-mouth
-      (assoc frog-mouth
-             :radius (+ frog-mouth-radius-start (* score 0.75)))))
+         (assoc frog-mouth
+                :radius (+ frog-mouth-radius-start (* score 0.75)))))
 
 (defn apply-physics [state]
   (-> state
@@ -308,7 +322,7 @@
       :always handle-input
 
       (not done?)
-      apply-damage 
+      apply-damage
 
       (and (not done?) (not (:paused? state)))
       (-> spawn-fly-with-timer update-fly-spawn-timer update-mouth-radius update-time apply-physics))))
@@ -413,17 +427,17 @@
           :let [time-alive (str (- timer spawn-time))
                 time-alive (subs time-alive 0 (min (count time-alive) 4))
                 text-size 20
-                fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]] 
+                fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]]
     (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
     #_(cpp/DrawText
-     time-alive
-     (int (- (:x p) r))
-     (int (- (:y p) r text-size))
-     text-size
-     (cpp/GetColor 0xffffffff))))
+       time-alive
+       (int (- (:x p) r))
+       (int (- (:y p) r text-size))
+       text-size
+       (cpp/GetColor 0xffffffff))))
 
-(defn draw-status! [{:keys [paused?] :as state}] 
-  (let [font-size 40 ]
+(defn draw-status! [{:keys [paused?] :as state}]
+  (let [font-size 40]
     (cpp/DrawText
      (if paused?
        "PAUSED"
@@ -431,7 +445,7 @@
      10
      10
      font-size
-     (cpp/GetColor 0xffffffff)) 
+     (cpp/GetColor 0xffffffff))
     (let [font-size (int (* 0.15 screen-width))
           label "GAME OVER"]
       (when (game-over? state)

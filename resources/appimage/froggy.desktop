@@ -1,0 +1,7 @@
+[Desktop Entry]
+Type=Application
+Name=Froggy
+Exec=froggy
+Icon=icon
+Categories=Game;
+Terminal=false
