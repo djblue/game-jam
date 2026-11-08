@@ -14,13 +14,6 @@ cp -r ../resources/* Froggy.app/Contents/Resources
 
 BIN='Froggy.app/Contents/MacOS/froggy'
 
-# Fixes: dyld[57925]: duplicate LC_RPATH
-otool -l "$BIN" \
-  | grep ' path ' \
-  | sed 's/^ *path //' \
-  | sed 's/ (offset [0-9]*)//' \
-  | xargs -I{} install_name_tool -delete_rpath "{}" "$BIN"
-
 RAYLIB_LIB="$(pwd)/$(ls -d release/_cache/raylib-sys-*-out-*/lib | tail -1)"
 
 dylibbundler -od -b \
@@ -28,6 +21,13 @@ dylibbundler -od -b \
              -d Froggy.app/Contents/Frameworks/ \
              -p @executable_path/../Frameworks/ \
              -s "$RAYLIB_LIB"
+
+# Fixes: dyld[57925]: duplicate LC_RPATH
+otool -l "$BIN" \
+  | grep ' path ' \
+  | sed 's/^ *path //' \
+  | sed 's/ (offset [0-9]*)//' \
+  | xargs -I{} install_name_tool -delete_rpath "{}" "$BIN"
 
 codesign --force --deep -s - Froggy.app
 
