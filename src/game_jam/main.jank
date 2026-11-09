@@ -404,15 +404,18 @@
                 length (* (/ (cpp/exp (* 20 linear))
                              (cpp/exp (* 20 1)))
                           total-distance)
-                target (cpp/Vector2MoveTowards p-mouth p-fly length)]]
+                target (cpp/Vector2MoveTowards p-mouth p-fly length)
+                tongue-inner-color (cpp/GetColor 0x8c3f4bff)
+                tongue-outline-color (cpp/GetColor 0x450301ff)
+                outline-width 5]]
     ;; outline
-    (cpp/DrawLineEx p-mouth target 44 (cpp/GetColor 0x000000ff))
-    (cpp/DrawCircleV target 22 (cpp/GetColor 0x000000ff))
-    (cpp/DrawCircleV p-mouth 22 (cpp/GetColor 0x000000ff))
+    (cpp/DrawLineEx p-mouth target (+ 40 (* outline-width 2)) tongue-outline-color)
+    (cpp/DrawCircleV target (+ 20 outline-width) tongue-outline-color)
+    (cpp/DrawCircleV p-mouth (+ 20 outline-width) tongue-outline-color)
 
-    (cpp/DrawLineEx p-mouth target 40 (cpp/GetColor 0xff6464ff))
-    (cpp/DrawCircleV target 20 (cpp/GetColor 0xff6464ff))
-    (cpp/DrawCircleV p-mouth 20 (cpp/GetColor 0xff6464ff))))
+    (cpp/DrawLineEx p-mouth target 40 tongue-inner-color)
+    (cpp/DrawCircleV target 20 tongue-inner-color)
+    (cpp/DrawCircleV p-mouth 20 tongue-inner-color)))
 
 (def fly-flapping-animation {:frame-time 0.05
                              :frames [{:asset :fly-idle-0}
