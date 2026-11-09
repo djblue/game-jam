@@ -1,7 +1,7 @@
 (defproject game-jam "0.1-SNAPSHOT"
   :dependencies [[org.jank-lang.commons/raylib-sys "2026.10-1"]
                  [org.jank-lang.commons/raygui-sys "2026.09-5"]]
-  :plugins [[org.jank-lang/lein-jank "2026.10-2"]
+  :plugins [[org.jank-lang/lein-jank "2026.10-3"]
             [lein-shell "0.5.0"]]
   :middleware [leiningen.jank/middleware]
   :main game-jam.main
