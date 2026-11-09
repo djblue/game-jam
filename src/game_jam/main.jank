@@ -425,17 +425,8 @@
 
 (defn draw-flys! [{:keys [flys timer]}]
   (doseq [[_id {p :position r :radius :keys [spawn-time]}] flys
-          :let [time-alive (str (- timer spawn-time))
-                time-alive (subs time-alive 0 (min (count time-alive) 4))
-                text-size 20
-                fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]]
-    (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)
-    #_(cpp/DrawText
-       time-alive
-       (int (- (:x p) r))
-       (int (- (:y p) r text-size))
-       text-size
-       (cpp/GetColor 0xffffffff))))
+          :let [fly-asset (select-animation-frame fly-flapping-animation (- timer spawn-time))]]
+    (cpp/DrawTexture (fly-asset @assets) (int (- (:x p) fly-size)) (int (- (:y p) fly-size)) cpp/WHITE)))
 
 (defn draw-status! [{:keys [paused?] :as state}]
   (let [font-size 40]
