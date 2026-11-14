@@ -2,7 +2,8 @@
   :license {:name "MPL 2.0"
             :url "https://www.mozilla.org/en-US/MPL/2.0/"}
   :dependencies [[org.jank-lang.commons/raylib-sys "2026.10-1"]
-                 [org.jank-lang.commons/raygui-sys "2026.09-5"]]
+                 [org.jank-lang.commons/raygui-sys "2026.09-5"]
+                 [djblue/portal "0.69.0"]]
   :plugins [[org.jank-lang/lein-jank "2026.10-3"]
             [lein-shell "0.5.0"]]
   :middleware [leiningen.jank/middleware]
@@ -20,5 +21,4 @@
              :release {:jank {:target-dir "target/release"
                               :optimization-level 3
                               :debug? false}}
-             :dev {:source-paths ["dev"]
-                   :dependencies [[djblue/portal "0.68.1"]]}})
+             :dev {:source-paths ["dev"]}})
